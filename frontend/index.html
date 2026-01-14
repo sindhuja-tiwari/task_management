@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Task Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 6px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        input, button {
+            padding: 10px;
+            margin: 5px 0;
+            width: 100%;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        .task {
+            border-bottom: 1px solid #ddd;
+            padding: 10px 0;
+        }
+
+        .completed {
+            text-decoration: line-through;
+            color: green;
+        }
+
+        .actions button {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>📝 Task Management</h1>
+
+<div class="container">
+    <input id="title" placeholder="Task title" />
+    <input id="description" placeholder="Task description" />
+    <button onclick="createTask()">Add Task</button>
+
+    <hr>
+
+    <div id="tasks"></div>
+</div>
+
+<script>
+    const API_URL = "http://127.0.0.1:8000";
+
+    async function fetchTasks() {
+        const res = await fetch(`${API_URL}/tasks`);
+        const tasks = await res.json();
+
+        const tasksDiv = document.getElementById("tasks");
+        tasksDiv.innerHTML = "";
+
+        tasks.forEach(task => {
+            const div = document.createElement("div");
+            div.className = "task";
+
+            div.innerHTML = `
+                <strong class="${task.completed ? 'completed' : ''}">
+                    ${task.title}
+                </strong>
+                <p>${task.description}</p>
+                <div class="actions">
+                    <button onclick="completeTask(${task.id})">✔ Complete</button>
+                    <button onclick="deleteTask(${task.id})">🗑 Delete</button>
+                </div>
+            `;
+
+            tasksDiv.appendChild(div);
+        });
+    }
+
+    async function createTask() {
+        const title = document.getElementById("title").value;
+        const description = document.getElementById("description").value;
+
+        if (!title) {
+            alert("Title required");
+            return;
+        }
+
+        await fetch(`${API_URL}/tasks`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title, description })
+        });
+
+        document.getElementById("title").value = "";
+        document.getElementById("description").value = "";
+
+        fetchTasks();
+    }
+
+    async function completeTask(id) {
+        await fetch(`${API_URL}/tasks/${id}`, {
+            method: "PUT"
+        });
+        fetchTasks();
+    }
+
+    async function deleteTask(id) {
+        await fetch(`${API_URL}/tasks/${id}`, {
+            method: "DELETE"
+        });
+        fetchTasks();
+    }
+
+    fetchTasks();
+</script>
+
+</body>
+</html>
